@@ -1,16 +1,16 @@
 from tkinter import *
 from tkinter import StringVar
 import tkinter.messagebox as msgbox
+import tkinter.ttk
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 import pandas as pd
 from pandastable import Table, TableModel
 import re
 from datetime import datetime
+import json
 
-# Create Dataframe for pandastable
-df = pd.DataFrame(columns=['회원번호', '이름', '생활구분', '금액', '식권번호'])
-pd.set_option('future.no_silent_downcasting', True)
+jsonName = 'sample.json'
 
 # Define the font properties
 font = Font(name='굴림체', size=9, bold=False)
@@ -69,12 +69,6 @@ def get_price(row):
     # Apply font to the cell
     sheet[f'D{row}'].font = font
 
-def update(df):
-    # Reverse the DataFrame to show the newest entries at the top
-    df = df.iloc[::-1].reset_index(drop=True)
-    pt.model.df = df
-    pt.redraw()
-
 def altFood(user_name):
     names = []
     for name in names:
@@ -88,10 +82,6 @@ def find_user(user_id, count):
             get_price(cell.row)
             sheet[f'E{cell.row}'].value = count
             sheet[f'E{cell.row}'].font = font
-            new_row = pd.DataFrame([[sheet[f'A{cell.row}'].value, sheet[f'B{cell.row}'].value, sheet[f'C{cell.row}'].value, sheet[f'D{cell.row}'].value, sheet[f'E{cell.row}'].value]],
-                                    columns=['회원번호', '이름', '생활구분', '금액', '식권번호'])
-            df = pd.concat([df, new_row], ignore_index=True)
-            update(df)
             return True
     return False
 
@@ -110,10 +100,27 @@ tk.geometry("800x800")
 
 # Create the DataFrame viewer at the top
 frame = Frame(tk)
-frame.pack(fill=BOTH, expand=1)
+frame.pack(fill=BOTH)
 
-pt = Table(frame, dataframe=df, showtoolbar=False, showstatusbar=False)
-pt.show()
+treeview = tkinter.ttk.Treeview(frame,
+    columns=['UserID', 'Name', 'Status', 'price', 'ticketNumber'],
+    displaycolumns=['UserID', 'Name', 'Status', 'price', 'ticketNumber'], show='headings')
+treeview.pack()
+
+treeview.column("UserID", width=100, anchor="center")
+treeview.heading("UserID", text="회원번호", anchor="center")
+
+treeview.column("Name", width=100, anchor="center")
+treeview.heading("Name", text="이름", anchor="center")
+
+treeview.column("Status", width=100, anchor="center")
+treeview.heading("Status", text="생활구분", anchor="center")
+
+treeview.column("price", width=100, anchor="center")
+treeview.heading("price", text="가격", anchor="center")
+
+treeview.column("ticketNumber", width=100, anchor="center")
+treeview.heading("ticketNumber", text="식권", anchor="center")
 
 # Create a frame to hold the entry and buttons horizontally
 input_frame = Frame(tk)
@@ -187,19 +194,37 @@ def add_non_member(name, reason_for_visit):
     workbook['비회원'][f'C{nm_row.non_member_row}'].font = nm_font
     workbook['비회원'][f'D{nm_row.non_member_row}'].font = nm_font
 
-    # Add non_member information to pandastable
-    new_row = pd.DataFrame([['비회원', name, reason_for_visit, '3500', count.ticket_number]], columns=['회원번호', '이름', '생활구분', '금액', '식권번호'])
-    df = pd.concat([df, new_row], ignore_index=True)
-    update(df)
-
     workbook.save(f'{file_name}.xlsx')
     count.ticket_number += 1
     nm_row.non_member_row += 1
 
+def jsonUpdate(userID, name, status, price):
+    global jsonName
+    new_data = {
+            "user_id": userID,
+            "user_name": name,
+            "status": status,
+            "price": price,
+            "ticket_number": "1" 
+        }
+    print(userID)
+    # treeview.insert('', 'end', text='', values=(f'{userID} {name} {status} {price} 1'))
+    treeview.insert('', 'end', text='', values=(f'1 2 3 4'))
+    print('inserted')
+    # Open the JSON file and load the data
+    with open(jsonName, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    # Append new data to the list
+    data.append(new_data)
+
+    # Write the updated data back to the file
+    with open(jsonName, 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
+
 def reset_ticket_number():
     reset_value = int(entry.get())
     count.ticket_number = reset_value
-    update(df)
 
 def save_file():
     dir = f'C:\\Users\\Administrator\\Desktop\\식권2024\\8월\\{file_name}.xlsx'
@@ -240,6 +265,10 @@ def nonUserPopUp():
     addNonUserButton = Button(nonUserWindow, text='비회원 판매', command=lambda: add_non_member(name_text.get(), reason_for_visit_text.get()))
     addNonUserButton.grid(row=2, column=2, padx=5)
 
+def debug():
+    print('Debug')
+    jsonUpdate('15151', '홍길동', '일반', 3500)
+
 # Create the StringVar after initializing the root window
 ticket_var = StringVar()
 
@@ -261,6 +290,9 @@ non_memeber_button.grid(row=0, column=5, padx=5)
 save_button = Button(input_frame, text='저장', command=save_file)
 save_button.grid(row=0, column=6, padx=5)
 
+save_button = Button(input_frame, text='Debug', command=debug)
+save_button.grid(row=0, column=7, padx=5)
+
 total_tickets_sold = Label(input_frame, textvariable=ticket_var, font=('Helvetica', 25, 'bold'))
 total_tickets_sold.grid(row=1)
 
@@ -268,3 +300,5 @@ total_tickets_sold.grid(row=1)
 entry.bind("<Return>", search)
 
 tk.mainloop()
+
+
