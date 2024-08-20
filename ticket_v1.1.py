@@ -147,20 +147,13 @@ def delete():
     except ValueError:
         warn()
 
-def add_user():
-    # Get and spilt user input
-    user_data_input = entry.get()
-    user_data = user_data_input.split(',')
-
+def add_user(userID, name, status):
     try:
-        # Retrieve user_id, name, and status
-        user_id = int(user_data[0])
-        name = user_data[1]
-        status = user_data[2]
-
+        print(userID, name, status)
+        userID = int(userID)
         # Set Retrieved values to excel
         last_row = sheet.max_row + 1
-        sheet[f'A{last_row}'].value = user_id
+        sheet[f'A{last_row}'].value = userID
         sheet[f'B{last_row}'].value = name
         sheet[f'C{last_row}'].value = status
 
@@ -174,21 +167,13 @@ def add_user():
         sheet[f'B{last_row}'].alignment = Alignment(horizontal='center', vertical='center')
         sheet[f'C{last_row}'].alignment = Alignment(horizontal='center', vertical='center')
         
-        workbook.save(f'{file_name}.xlsx')
+        workbook.save(f'{file_name}_0.xlsx')
         output("신규 회원 추가 완료")
     except (IndexError, ValueError):
         warn()
 
-def add_non_member():
+def add_non_member(name, reason_for_visit):
     global df
-
-    # Get and spilt user input
-    user_data_input = entry.get()
-    user_data = user_data_input.split(',')
-
-    # Retrieve name and reason_for_visit
-    name = user_data[0]
-    reason_for_visit = user_data[1]
 
     # Set Retrieved values to excel
     workbook['비회원'][f'A{nm_row.non_member_row}'].value = name
@@ -221,7 +206,39 @@ def save_file():
     workbook.save(dir)
     print("FILE SAVED SUCCESSFULLY!!!")
 
+def addUserPopUp():
+    addUserWindow = Toplevel(tk)
+    addUserWindow.geometry('500x300')
+    addUserWindow.title('신규회원추가')
+    userID_text = Entry(addUserWindow)
+    name_text = Entry(addUserWindow)
+    status_text = Entry(addUserWindow)
+    
+    Label(addUserWindow, text='회원번호').grid(row=0, column=0, padx=5)
+    userID_text.grid(row=0, column=1, padx=5)
+    Label(addUserWindow, text='이름').grid(row=1, column=0, padx=5)
+    name_text.grid(row=1, column=1, padx=5)
+    Label(addUserWindow, text='생활구분').grid(row=2, column=0, padx=5)
+    status_text.grid(row=2, column=1, padx=5)
 
+    addUserButton = Button(addUserWindow, text='신규회원추가', command=lambda: add_user(userID_text.get(), name_text.get(), status_text.get()))
+    addUserButton.grid(row=3, column=2, padx=5)
+
+def nonUserPopUp():
+    nonUserWindow = Toplevel(tk)
+    nonUserWindow.geometry('500x300')
+    nonUserWindow.geometry('비회원 판매')
+
+    name_text = Entry(nonUserWindow)
+    reason_for_visit_text = Entry(nonUserWindow)
+
+    Label(nonUserWindow, text='이름').grid(row=0, column=0, padx=5)
+    name_text.grid(row=0, column=1, padx=5)
+    Label(nonUserWindow, text='방문용무').grid(row=1, column=0, padx=5)
+    reason_for_visit_text.grid(row=1, column=1, padx=5)
+
+    addNonUserButton = Button(nonUserWindow, text='비회원 판매', command=lambda: add_non_member(name_text.get(), reason_for_visit_text.get()))
+    addNonUserButton.grid(row=2, column=2, padx=5)
 
 # Create the StringVar after initializing the root window
 ticket_var = StringVar()
@@ -229,16 +246,16 @@ ticket_var = StringVar()
 search_button = Button(input_frame, text='검색', command=search)
 search_button.grid(row=0, column=1, padx=5)
 
-delete_button = Button(input_frame, text='삭제', command=delete)
+delete_button = Button(input_frame, text='환불', command=delete)
 delete_button.grid(row=0, column=2, padx=5)
 
-add_user_button = Button(input_frame, text='신규회원추가', command=add_user)
+add_user_button = Button(input_frame, text='신규회원추가', command=addUserPopUp)
 add_user_button.grid(row=0, column=3, padx=5)
 
 reset_number = Button(input_frame, text='식권번호리셋', command=reset_ticket_number)
 reset_number.grid(row=0, column=4, padx=5)
 
-non_memeber_button = Button(input_frame, text='비회원', command=add_non_member)
+non_memeber_button = Button(input_frame, text='비회원', command=nonUserPopUp)
 non_memeber_button.grid(row=0, column=5, padx=5)
 
 save_button = Button(input_frame, text='저장', command=save_file)
